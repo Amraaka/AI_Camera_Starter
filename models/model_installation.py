@@ -8,5 +8,4 @@ model = YOLO("yolo26m.pt")  # This will download the model automatically
 # 'simplify=True' optimizes the graph
 model.export(format="onnx", dynamic=True, simplify=True)
 
-# The output file will be named 'yolo11x.onnx'
-    
+# The output file will be named 'yolo26x.onnx'

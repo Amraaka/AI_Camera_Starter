@@ -69,3 +69,17 @@ Payload shape:
 	"updated_at_unix_ms": 1711800000000
 }
 ```
+
+## Stable Person IDs (OSNet ReID)
+
+The pipeline now uses appearance-assisted tracking for more stable IDs across frames.
+
+- Detector: YOLO person detections
+- Tracker: IoU + OSNet embedding matching (Hungarian assignment)
+- ReID model: `models/osnet_x1_0_msmt17.pt`
+
+Install dependencies:
+
+```bash
+pip install torchreid tensorboard scipy
+```

@@ -25,8 +25,15 @@ class ZoneDebugRenderer:
 		zone_counts: dict[str, int],
 	) -> np.ndarray:
 		labels = []
-		if detections.confidence is not None:
+		if detections.confidence is not None and detections.tracker_id is not None:
+			labels = [
+				f"id:{int(track_id)} person {conf:.2f}"
+				for track_id, conf in zip(detections.tracker_id, detections.confidence)
+			]
+		elif detections.confidence is not None:
 			labels = [f"person {conf:.2f}" for conf in detections.confidence]
+		elif detections.tracker_id is not None:
+			labels = [f"id:{int(track_id)} person" for track_id in detections.tracker_id]
 
 		annotated = frame.copy()
 		annotated = self.box_annotator.annotate(scene=annotated, detections=detections)
