@@ -42,6 +42,15 @@ export FIRESTORE_MIN_PUBLISH_INTERVAL_S=0.2
 export FIRESTORE_ONLY_ON_CHANGE=true
 ```
 
+Or use a `.env` file in the project root.
+
+```bash
+cp .env.example .env
+# Edit .env and set FIREBASE_CREDENTIALS to your real absolute path
+```
+
+`src/main.py` now auto-loads `.env` at startup.
+
 ### 3) Run the app
 
 `src/main.py` initializes `FirestoreZoneCountPublisher` and writes the latest payload to:

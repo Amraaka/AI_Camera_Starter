@@ -8,6 +8,12 @@ import supervision as sv
 import numpy as np
 
 try:
+	from dotenv import load_dotenv
+except ModuleNotFoundError:
+	def load_dotenv(*_args, **_kwargs) -> bool:
+		return False
+
+try:
 	from src.input.video import video_frames
 	from src.input.rtsp import rtsp_frames
 	from src.pipeline.detector import PersonDetector
@@ -103,6 +109,7 @@ def build_zones() -> list[ZoneDefinition]:
 
 
 def main() -> None:
+	load_dotenv()
 	logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 
 	frames, source_fps = get_frame_source()
