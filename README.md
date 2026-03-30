@@ -36,6 +36,7 @@ pip install firebase-admin
 export FIRESTORE_ENABLED=true
 export FIREBASE_CREDENTIALS=/absolute/path/to/firebase-service-account.json
 export FIRESTORE_COLLECTION=zone_counts
+export FIRESTORE_ALERT_COLLECTION=zone_alerts
 export FIRESTORE_DOCUMENT_ID=live
 export FIRESTORE_CAMERA_ID=camera_1
 export FIRESTORE_MIN_PUBLISH_INTERVAL_S=0.2
@@ -83,3 +84,89 @@ Install dependencies:
 ```bash
 pip install torchreid tensorboard scipy
 ```
+
+## Barista Absence Alert
+
+The pipeline now sends alert events when no one is detected in `BARISTA_ZONE` for a sustained period.
+
+- Confirm duration before alert: `10s`
+- Repeat cooldown while still absent: `60s`
+- Event types: `barista_absent`, `barista_returned`
+
+Alert events are written to:
+
+`<FIRESTORE_ALERT_COLLECTION>` (default: `zone_alerts`)
+
+Example event document:
+
+```json
+{
+	"camera_id": "camera_1",
+	"event_type": "barista_absent",
+	"zone_name": "BARISTA_ZONE",
+	"barista_count": 0,
+	"absent_for_s": 12.4,
+	"created_at_unix_ms": 1711800000000
+}
+```
+
+## Frontend Integration (Firebase Web SDK)
+
+Use your frontend to subscribe to `zone_alerts` and show live notifications.
+
+```javascript
+import { initializeApp } from "firebase/app";
+import {
+	getFirestore,
+	collection,
+	query,
+	where,
+	orderBy,
+	limit,
+	onSnapshot,
+} from "firebase/firestore";
+
+const firebaseConfig = {
+	apiKey: "...",
+	authDomain: "...",
+	projectId: "...",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const alertsRef = collection(db, "zone_alerts");
+const q = query(
+	alertsRef,
+	where("camera_id", "==", "camera_1"),
+	orderBy("created_at_unix_ms", "desc"),
+	limit(20),
+);
+
+const seen = new Set();
+
+onSnapshot(q, (snap) => {
+	snap.docChanges().forEach((change) => {
+		if (change.type !== "added") return;
+		if (seen.has(change.doc.id)) return;
+		seen.add(change.doc.id);
+
+		const event = change.doc.data();
+		if (event.event_type === "barista_absent") {
+			console.warn("ALERT: No barista in zone", event);
+			// Show toast, modal, bell badge, sound, etc.
+		}
+
+		if (event.event_type === "barista_returned") {
+			console.info("Recovery: Barista returned", event);
+		}
+	});
+});
+```
+
+Recommended frontend behavior:
+
+1. Show red alert toast/banner for `barista_absent`.
+2. Show green recovery toast for `barista_returned`.
+3. Keep a notification history panel from the latest alert docs.
+4. Filter by `camera_id` if you have multiple cameras.

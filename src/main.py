@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator, Literal
 import logging
+import time
 
 import supervision as sv
 import numpy as np
@@ -91,6 +92,9 @@ REID_MODEL_PATH = Path("models/osnet_x1_0_msmt17.pt")
 VIDEO_PATH = Path("video/walking_inout_zone.mp4")
 SOURCE_KIND: SourceKind = "rtsp"
 RTSP_URL = "rtsp://admin:q1w2e3r4@192.168.0.102:554/Streaming/Channels/301"
+BARISTA_ZONE_NAME = "BARISTA_ZONE"
+BARISTA_ABSENCE_CONFIRM_S = 10.0
+BARISTA_ALERT_COOLDOWN_S = 60.0
 
 
 def get_frame_source() -> tuple[Iterator[np.ndarray], float]:
@@ -139,6 +143,10 @@ def main() -> None:
     renderer = ZoneDebugRenderer(window_name="YOLO Zone Counting")
     firestore_publisher = FirestoreZoneCountPublisher.from_env()
 
+    barista_missing_since_ts: float | None = None
+    absence_alert_sent = False
+    last_absence_alert_ts = 0.0
+
     for frame in frames:
         frame_height, frame_width = frame.shape[:2]
         detections = detector.detect(frame)
@@ -149,6 +157,43 @@ def main() -> None:
             frame_height=frame_height,
         )
         firestore_publisher.publish(zone_counts=zone_counts)
+
+        now = time.monotonic()
+        barista_count = int(zone_counts.get(BARISTA_ZONE_NAME, 0))
+
+        if barista_count <= 0:
+            if barista_missing_since_ts is None:
+                barista_missing_since_ts = now
+
+            absent_for_s = now - barista_missing_since_ts
+            should_send_alert = (
+                absent_for_s >= BARISTA_ABSENCE_CONFIRM_S
+                and (
+                    not absence_alert_sent
+                    or (now - last_absence_alert_ts) >= BARISTA_ALERT_COOLDOWN_S
+                )
+            )
+            if should_send_alert:
+                firestore_publisher.publish_alert(
+                    event_type="barista_absent",
+                    zone_name=BARISTA_ZONE_NAME,
+                    details={
+                        "barista_count": 0,
+                        "absent_for_s": round(absent_for_s, 1),
+                    },
+                )
+                absence_alert_sent = True
+                last_absence_alert_ts = now
+        else:
+            if barista_missing_since_ts is not None and absence_alert_sent:
+                firestore_publisher.publish_alert(
+                    event_type="barista_returned",
+                    zone_name=BARISTA_ZONE_NAME,
+                    details={"barista_count": barista_count},
+                )
+
+            barista_missing_since_ts = None
+            absence_alert_sent = False
 
         annotated = renderer.render(
             frame=frame,
