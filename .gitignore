@@ -11,3 +11,4 @@ venv
 models/osnet_x1_0_msmt17.pt
 models/yolo26x.onnx
 models/yolo26x.pt
+video/
