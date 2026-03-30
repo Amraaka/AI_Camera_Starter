@@ -1,8 +1,3 @@
-"""
-Get video information and compare multiple videos.
-Uses OpenCV for metadata and os for file size.
-Run: python tool/video_info.py
-"""
 import os
 import sys
 from pathlib import Path
@@ -127,8 +122,8 @@ def print_comparison(infos: list[dict]) -> None:
 
 def main() -> None:
     videos = [
-        "video/tek.mp4",
-        "video/tek.mp4",
+        "video/walking_inout_zone.mp4",
+        "video/walking_inout_zone.mp4",
     ]
 
     if len(sys.argv) > 1:

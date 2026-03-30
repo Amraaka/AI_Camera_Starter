@@ -18,12 +18,12 @@ class ZoneDebugRenderer:
 
 	def render(
 		self,
-		frame,
+		frame: np.ndarray,
 		detections: sv.Detections,
 		zones: list[ZoneDefinition],
 		polygons: dict[str, np.ndarray],
 		zone_counts: dict[str, int],
-	):
+	) -> np.ndarray:
 		labels = []
 		if detections.confidence is not None:
 			labels = [f"person {conf:.2f}" for conf in detections.confidence]
@@ -50,7 +50,7 @@ class ZoneDebugRenderer:
 
 		return annotated
 
-	def show(self, frame, delay_ms: int = 1) -> int:
+	def show(self, frame: np.ndarray, delay_ms: int = 1) -> int:
 		cv2.imshow(self.window_name, frame)
 		return cv2.waitKey(delay_ms) & 0xFF
 

@@ -8,15 +8,15 @@ import numpy as np
 
 
 def video_frames(video_path: str | Path) -> Iterator[np.ndarray]:
-    cap = cv2.VideoCapture(str(video_path))
-    if not cap.isOpened():
-        raise RuntimeError(f"Cannot open video source: {video_path}")
+	cap = cv2.VideoCapture(str(video_path))
+	if not cap.isOpened():
+		raise RuntimeError(f"Cannot open video source: {video_path}")
 
-    try:
-        while True:
-            ok, frame = cap.read()
-            if not ok:
-                break
-            yield frame
-    finally:
-        cap.release()
+	try:
+		while True:
+			ok, frame = cap.read()
+			if not ok:
+				break
+			yield frame
+	finally:
+		cap.release()

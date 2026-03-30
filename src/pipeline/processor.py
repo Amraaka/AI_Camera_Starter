@@ -19,7 +19,7 @@ class ZoneCounter:
 		self.ref_width = ref_width
 		self.ref_height = ref_height
 		self.zones = zones
-		self._cache_shape: tuple[int, int] | None = None
+		self._cache_frame_size: tuple[int, int] | None = None
 		self._cache_polygons: dict[str, np.ndarray] = {}
 
 	def _scale_polygon(self, polygon: np.ndarray, frame_width: int, frame_height: int) -> np.ndarray:
@@ -31,15 +31,15 @@ class ZoneCounter:
 		return scaled.astype(np.int32)
 
 	def _scaled_polygons(self, frame_width: int, frame_height: int) -> dict[str, np.ndarray]:
-		shape = (frame_width, frame_height)
-		if self._cache_shape == shape:
+		frame_size = (frame_width, frame_height)
+		if self._cache_frame_size == frame_size:
 			return self._cache_polygons
 
 		self._cache_polygons = {
 			zone.name: self._scale_polygon(zone.polygon, frame_width, frame_height)
 			for zone in self.zones
 		}
-		self._cache_shape = shape
+		self._cache_frame_size = frame_size
 		return self._cache_polygons
 
 	@staticmethod

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Iterator, Literal
 
 import supervision as sv
 import numpy as np
@@ -21,6 +22,7 @@ except ModuleNotFoundError:
 
 ZONE_REF_W = 1920
 ZONE_REF_H = 1080
+SourceKind = Literal["video", "rtsp"]
 
 BARISTA_ZONE = np.array(
 	[
@@ -42,31 +44,43 @@ BARISTA_ZONE = np.array(
 	dtype=np.float32,
 )
 
-CUSTOMER_ZONE = np.array(
-	[
-		[597, 1],
-		[1753, 2],
-		[1753, 848],
-		[1586, 827],
-		[1471, 755],
-		[1555, 543],
-		[1181, 346],
-		[1065, 408],
-		[657, 196],
-		[617, 142],
-		[596, 45],
-		[596, 15],
-	],
-	dtype=np.float32,
+# Frame size: 1920 x 1080
+CUSTOMER_ZONE = np.array([
+    [673, 74],
+    [763, 93],
+    [985, 160],
+    [1025, 128],
+    [1126, 129],
+    [1182, 169],
+    [1250, 164],
+    [1380, 140],
+    [1510, 164],
+    [1588, 187],
+    [1601, 136],
+    [1663, 7],
+    [1918, 5],
+    [1917, 998],
+    [1636, 828],
+    [1594, 834],
+    [1471, 752],
+    [1552, 548],
+    [1181, 349],
+    [1085, 410],
+    [796, 266],
+    [734, 226],
+    [707, 161],
+    [668, 141],
+], 
+dtype=np.float32
 )
 
 MODEL_PATH = Path("models/yolo26x.onnx")
 VIDEO_PATH = Path("video/walking_inout_zone.mp4")
-SOURCE_KIND = "rtsp"  # "video" | "rtsp"
+SOURCE_KIND: SourceKind = "video"
 RTSP_URL = "rtsp://admin:q1w2e3r4@192.168.0.102:554/Streaming/Channels/301"
 
 
-def get_frame_source():
+def get_frame_source() -> tuple[Iterator[np.ndarray], float]:
 	if SOURCE_KIND == "video":
 		if not VIDEO_PATH.exists():
 			raise FileNotFoundError(f"Video not found: {VIDEO_PATH}")
@@ -78,15 +92,19 @@ def get_frame_source():
 	raise ValueError(f"Unsupported SOURCE_KIND: {SOURCE_KIND}")
 
 
+def build_zones() -> list[ZoneDefinition]:
+	return [
+		ZoneDefinition(name="BARISTA_ZONE", polygon=BARISTA_ZONE, color=(40, 220, 20)),
+		ZoneDefinition(name="CUSTOMER_ZONE", polygon=CUSTOMER_ZONE, color=(20, 180, 255)),
+	]
+
+
 def main() -> None:
 	frames, source_fps = get_frame_source()
 	fps = max(1, int(round(source_fps)))
 	delay_ms = max(1, int(1000 / fps))
 
-	zones = [
-		ZoneDefinition(name="BARISTA_ZONE", polygon=BARISTA_ZONE, color=(40, 220, 20)),
-		ZoneDefinition(name="CUSTOMER_ZONE", polygon=CUSTOMER_ZONE, color=(20, 180, 255)),
-	]
+	zones = build_zones()
 
 	detector = PersonDetector(model_path=MODEL_PATH)
 	processor = ZoneCounter(ref_width=ZONE_REF_W, ref_height=ZONE_REF_H, zones=zones)
@@ -109,7 +127,7 @@ def main() -> None:
 			zone_counts=zone_counts,
 		)
 		key = renderer.show(annotated, delay_ms=delay_ms)
-		if key == 27 or key == ord("q"):
+		if key in (27, ord("q")):
 			break
 
 	renderer.close()

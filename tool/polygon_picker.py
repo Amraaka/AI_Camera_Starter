@@ -1,44 +1,5 @@
-"""
-Polygon zone picker: click points on a photo or video frame to define a polygon.
-Run once, then paste the printed polygon into supervision_test.py.
-"""
 import cv2
 import numpy as np
-
-
-
-# camera 3 zone of store hall, only count the dwell time of the customes in zone 
-# camera3_storehall_zone = np.array([
-#     [1396, 228],
-#     [1190, 556],
-#     [1177, 666],
-#     [1244, 753],
-#     [1353, 844],
-#     [1901, 1075],
-#     [19, 1071],
-#     [14, 15],
-#     [1405, 12],
-#     [1403, 127],
-#     [1402, 177],
-#     [1402, 198],
-# ])
-
-# camera1_store_hall_zone = np.array([
-#     [1806, 7],
-#     [1270, 930],
-#     [1167, 1075],
-#     [2, 1072],
-#     [10, 8],
-#     [404, 4],
-#     [417, 118],
-#     [512, 103],
-#     [538, 3],
-#     [1369, 3],
-# ])
-
-
-
-
 
 def load_image_or_frame(path: str, frame_index: int = 0) -> tuple[np.ndarray | None, int, int]:
     path_lower = path.strip().lower()
