@@ -4,6 +4,8 @@ __pycache__/
 .mypy_cache/
 *.pyc
 .env
+*firebase*service*account*.json
+*firestore*service*account*.json
 build/
 dist/
 *.egg-info/
@@ -12,3 +14,4 @@ models/osnet_x1_0_msmt17.pt
 models/yolo26x.onnx
 models/yolo26x.pt
 video/
+node_modules

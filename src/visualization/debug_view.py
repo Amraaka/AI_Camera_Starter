@@ -32,21 +32,21 @@ class ZoneDebugRenderer:
 		annotated = self.box_annotator.annotate(scene=annotated, detections=detections)
 		annotated = self.label_annotator.annotate(scene=annotated, detections=detections, labels=labels)
 
-		y_offset = 45
+		y_offset = 20
 		for zone in zones:
 			polygon = polygons[zone.name]
-			cv2.polylines(annotated, [polygon], isClosed=True, color=zone.color, thickness=3)
+			cv2.polylines(annotated, [polygon], isClosed=True, color=zone.color, thickness=2)
 			cv2.putText(
 				annotated,
 				f"{zone.name} people: {zone_counts.get(zone.name, 0)}",
 				(30, y_offset),
-				cv2.FONT_HERSHEY_SIMPLEX,
+				cv2.FONT_HERSHEY_PLAIN,
 				1.0,
 				zone.color,
 				2,
 				cv2.LINE_AA,
 			)
-			y_offset += 40
+			y_offset += 25
 
 		return annotated
 

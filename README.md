@@ -19,3 +19,44 @@ Scalable camera-centric pipeline for RTSP ingest, AI processing, and business ev
 `RTSP -> Frame Queue -> Workers -> Event Queue -> DB`
 
 Each `cameraId` owns an independent logical pipeline state.
+
+## Firestore Live Zone Counts
+
+The pipeline can publish per-zone people counts to Firestore on every live change.
+
+### 1) Install Python dependency
+
+```bash
+pip install firebase-admin
+```
+
+### 2) Set environment variables
+
+```bash
+export FIRESTORE_ENABLED=true
+export FIREBASE_CREDENTIALS=/absolute/path/to/firebase-service-account.json
+export FIRESTORE_COLLECTION=zone_counts
+export FIRESTORE_DOCUMENT_ID=live
+export FIRESTORE_CAMERA_ID=camera_1
+export FIRESTORE_MIN_PUBLISH_INTERVAL_S=0.2
+export FIRESTORE_ONLY_ON_CHANGE=true
+```
+
+### 3) Run the app
+
+`src/main.py` initializes `FirestoreZoneCountPublisher` and writes the latest payload to:
+
+`<collection>/<document_id>`
+
+Payload shape:
+
+```json
+{
+	"camera_id": "camera_1",
+	"zone_counts": {
+		"BARISTA_ZONE": 2,
+		"CUSTOMER_ZONE": 5
+	},
+	"updated_at_unix_ms": 1711800000000
+}
+```

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Iterator, Literal
+import logging
 
 import supervision as sv
 import numpy as np
@@ -11,12 +12,14 @@ try:
 	from src.input.rtsp import rtsp_frames
 	from src.pipeline.detector import PersonDetector
 	from src.pipeline.processor import ZoneCounter, ZoneDefinition
+	from src.services.firestore_service import FirestoreZoneCountPublisher
 	from src.visualization.debug_view import ZoneDebugRenderer
 except ModuleNotFoundError:
 	from input.video import video_frames
 	from input.rtsp import rtsp_frames
 	from pipeline.detector import PersonDetector
 	from pipeline.processor import ZoneCounter, ZoneDefinition
+	from services.firestore_service import FirestoreZoneCountPublisher
 	from visualization.debug_view import ZoneDebugRenderer
 
 
@@ -100,6 +103,8 @@ def build_zones() -> list[ZoneDefinition]:
 
 
 def main() -> None:
+	logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
+
 	frames, source_fps = get_frame_source()
 	fps = max(1, int(round(source_fps)))
 	delay_ms = max(1, int(1000 / fps))
@@ -109,6 +114,7 @@ def main() -> None:
 	detector = PersonDetector(model_path=MODEL_PATH)
 	processor = ZoneCounter(ref_width=ZONE_REF_W, ref_height=ZONE_REF_H, zones=zones)
 	renderer = ZoneDebugRenderer(window_name="YOLO Zone Counting")
+	firestore_publisher = FirestoreZoneCountPublisher.from_env()
 
 	for frame in frames:
 		frame_height, frame_width = frame.shape[:2]
@@ -118,6 +124,7 @@ def main() -> None:
 			frame_width=frame_width,
 			frame_height=frame_height,
 		)
+		firestore_publisher.publish(zone_counts=zone_counts)
 
 		annotated = renderer.render(
 			frame=frame,
