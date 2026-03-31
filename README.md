@@ -52,6 +52,85 @@ cp .env.example .env
 
 `src/main.py` now auto-loads `.env` at startup.
 
+## Runtime Tuning and Presets
+
+`src/main.py` supports CLI flags and environment variables for source selection, speed tuning, and production mode.
+
+### Key runtime options
+
+- Source: `SOURCE_KIND`, `VIDEO_PATH`, `RTSP_URL`, `RTSP_SOURCE_FPS`
+- Models: `MODEL_PATH`, `REID_MODEL_PATH`
+- Performance: `FRAME_STRIDE`, `DETECTOR_IMGSZ`, `TRACKER_DET_THRESHOLD`, `FPS_LOG_INTERVAL_S`
+- Stability: `ZONE_COUNT_SMOOTHING_WINDOW`
+- Display/mode: `RUN_MODE`, `DISPLAY_ENABLED`, `--headless`
+- Tracking: `WITH_REID` (disabled by default for speed)
+
+Equivalent CLI flags are available, for example:
+
+```bash
+python3 -m src.main \
+  --source-kind rtsp \
+  --rtsp-url "rtsp://admin:password@192.168.0.10:554/Streaming/Channels/301" \
+  --frame-stride 5 \
+  --detector-imgsz 640 \
+  --fps-log-interval-s 5 \
+  --headless
+```
+
+### Preset: balanced
+
+Good default for most deployments.
+
+```bash
+RUN_MODE=production DISPLAY_ENABLED=false \
+SOURCE_KIND=rtsp RTSP_URL="rtsp://..." RTSP_SOURCE_FPS=30 \
+FRAME_STRIDE=5 DETECTOR_IMGSZ=640 \
+ZONE_COUNT_SMOOTHING_WINDOW=3 FPS_LOG_INTERVAL_S=5 \
+WITH_REID=false TRACKER_DET_THRESHOLD=0.25 \	
+python3 -m src.main --headless
+```
+
+### Preset: fast
+
+Lower latency and higher throughput, with some accuracy trade-off.
+
+```bash
+RUN_MODE=production DISPLAY_ENABLED=false \
+SOURCE_KIND=rtsp RTSP_URL="rtsp://..." RTSP_SOURCE_FPS=30 \
+FRAME_STRIDE=8 DETECTOR_IMGSZ=576 \
+ZONE_COUNT_SMOOTHING_WINDOW=3 FPS_LOG_INTERVAL_S=5 \
+WITH_REID=false TRACKER_DET_THRESHOLD=0.30 \
+python3 -m src.main --headless
+```
+
+### Preset: max-speed
+
+For constrained hardware or many concurrent streams.
+
+```bash
+RUN_MODE=production DISPLAY_ENABLED=false \
+SOURCE_KIND=rtsp RTSP_URL="rtsp://..." RTSP_SOURCE_FPS=30 \
+FRAME_STRIDE=10 DETECTOR_IMGSZ=512 \
+ZONE_COUNT_SMOOTHING_WINDOW=2 FPS_LOG_INTERVAL_S=5 \
+WITH_REID=false TRACKER_DET_THRESHOLD=0.35 \
+python3 -m src.main --headless
+```
+
+### Preset: debug visual
+
+Useful for polygon validation and troubleshooting.
+
+```bash
+RUN_MODE=debug DISPLAY_ENABLED=true \
+SOURCE_KIND=video VIDEO_PATH="video/walking_inout_zone.mp4" \
+FRAME_STRIDE=1 DETECTOR_IMGSZ=960 \
+ZONE_COUNT_SMOOTHING_WINDOW=3 FPS_LOG_INTERVAL_S=5 \
+WITH_REID=false TRACKER_DET_THRESHOLD=0.25 \
+python3 -m src.main
+```
+
+Tip: start from `balanced`, then tune `FRAME_STRIDE` and `DETECTOR_IMGSZ` while watching `Perf:` logs.
+
 ### 3) Run the app
 
 `src/main.py` initializes `FirestoreZoneCountPublisher` and writes the latest payload to:
@@ -73,11 +152,12 @@ Payload shape:
 
 ## Stable Person IDs (OSNet ReID)
 
-The pipeline now uses appearance-assisted tracking for more stable IDs across frames.
+The pipeline supports optional appearance-assisted tracking for more stable IDs across frames.
 
 - Detector: YOLO person detections
 - Tracker: IoU + OSNet embedding matching (Hungarian assignment)
 - ReID model: `models/osnet_x1_0_msmt17.pt`
+- ReID toggle: `WITH_REID=true` or CLI `--with-reid`
 
 Install dependencies:
 

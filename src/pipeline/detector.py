@@ -12,6 +12,7 @@ class PersonDetector:
 		model_path: str | Path,
 		conf_threshold: float = 0.25,
 		iou_threshold: float = 0.45,
+		imgsz: int = 960,
 	) -> None:
 		self.model_path = Path(model_path)
 		if not self.model_path.exists():
@@ -19,6 +20,7 @@ class PersonDetector:
 
 		self.conf_threshold = conf_threshold
 		self.iou_threshold = iou_threshold
+		self.imgsz = int(max(320, imgsz))
 		self.model = YOLO(str(self.model_path))
 
 	def detect(self, frame: np.ndarray) -> np.ndarray:
@@ -26,6 +28,7 @@ class PersonDetector:
 			frame,
 			conf=self.conf_threshold,
 			iou=self.iou_threshold,
+			imgsz=self.imgsz,
 			classes=[0],
 			verbose=False,
 		)[0]

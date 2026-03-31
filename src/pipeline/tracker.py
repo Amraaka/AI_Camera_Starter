@@ -16,11 +16,11 @@ class PersonTracker:
 		with_reid: bool = False,
 	) -> None:
 		reid_path = Path(reid_model_path)
-		if not reid_path.exists():
+		if with_reid and not reid_path.exists():
 			raise FileNotFoundError(f"ReID model not found: {reid_path}")
 
 		self._tracker = BotSort(
-			reid_weights=reid_path,
+			reid_weights=reid_path if with_reid else None,
 			device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
 			half=False,
 			track_high_thresh=float(det_threshold),
